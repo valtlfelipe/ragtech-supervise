@@ -23,7 +23,7 @@ $ docker run -d --name supervise --device /dev/ttyACM0:rw -p 4470:4470 -p 4471:4
 services:
   ragtech-supervise:
     image: ghcr.io/valtlfelipe/ragtech-supervise:latest
-    device:
+    devices:
       - /dev/ttyACM0:/dev/ttyACM0:rw
     ports:
       - "4470:4470"  # Supervise web interface and API
