@@ -12,7 +12,7 @@ You can run a new container from the computer where the UPS USB cable is plugged
 the serial interface created by this USB is named `/dev/ttyACM0` and replace it accordingly:
 
 ```
-$ docker run -d --name supervise --device /dev/ttyACM0:rw -p 4470:4470 ghcr.io/kriansa/ragtech-supervise:latest
+$ docker run -d --name supervise --device /dev/ttyACM0:rw -p 4470:4470 ghcr.io/valtlfelipe/ragtech-supervise:latest
 ```
 
 ## Logging
@@ -26,11 +26,61 @@ All log output is written to stdout and stderr. Logs are categorized with 5 diff
 
 ## Interface
 
-If you want to access the web interface, head to `http://localhost:4470` in your browser.
+The container exposes two HTTP ports:
 
-Alternatively, you can have programatic access to the UPS data connecting to the underlying SQLite
-database used to store the logged information. It's really useful if you want, for instance, to
-create a metrics exporter out of the UPS data. 
+- **Port 4470** — Ragtech Supervise web interface and API
+- **Port 4471** — Prometheus metrics exporter (this container)
+
+### Web Interface
+
+Access the web interface at `http://localhost:4470` in your browser.
+
+### Prometheus Metrics
+
+A Prometheus-compatible metrics endpoint is available at `http://localhost:4471/metrics`.
+
+**Available metrics:**
+
+| Metric | Type | Description |
+|--------|------|-------------|
+| `ragtech_ups_status` | Gauge | UPS connection status (1=connected, 0=disconnected) |
+| `ragtech_ups_input_voltage_volts` | Gauge | Input voltage in volts |
+| `ragtech_ups_output_voltage_volts` | Gauge | Output voltage in volts |
+| `ragtech_ups_output_current_amps` | Gauge | Output current in amps |
+| `ragtech_ups_output_frequency_hertz` | Gauge | Output frequency in Hz |
+| `ragtech_ups_output_power_watts` | Gauge | Output power in watts |
+| `ragtech_ups_battery_charge_percent` | Gauge | Battery charge percentage |
+| `ragtech_ups_battery_voltage_volts` | Gauge | Battery voltage in volts |
+| `ragtech_ups_temperature_celsius` | Gauge | UPS temperature in Celsius |
+| `ragtech_ups_load_percent` | Gauge | Load as percentage of nominal power |
+| `ragtech_ups_led_red` | Gauge | Red LED state (0 or 255) |
+| `ragtech_ups_led_green` | Gauge | Green LED state (0 or 255) |
+| `ragtech_ups_led_blue` | Gauge | Blue LED state (0 or 255) |
+| `ragtech_system_uptime_milliseconds` | Gauge | System uptime in milliseconds since epoch |
+| `ragtech_collector_scrape_duration_seconds` | Gauge | Duration of the last scrape |
+| `ragtech_collector_scrape_errors_total` | Counter | Total number of scrape errors |
+
+All UPS metrics include `device_id` and `device_name` labels.
+
+**Health check:**
+
+```
+$ curl http://localhost:4471/health
+OK
+```
+
+**Example Prometheus scrape config:**
+
+```yaml
+scrape_configs:
+  - job_name: 'ragtech-supervise'
+    static_configs:
+      - targets: ['localhost:4471']
+```
+
+### SQLite Database
+
+Alternatively, have programatic access to the UPS data by querying the underlying SQLite database. 
 
 **IMPORTANT:** The SQLite database is set to use `WAL` as the journaling mode, so you can read the
 database while it's being written to. Because of that, you need to also account for all the database
@@ -43,7 +93,7 @@ This is how you would run the container with the database mounted to the host fi
 
 ```
 $ mkdir host-db-path
-$ docker run [...] -v ./host-db-path:/data ghcr.io/kriansa/ragtech-supervise:latest
+$ docker run [...] -v ./host-db-path:/data ghcr.io/valtlfelipe/ragtech-supervise:latest
 ```
 
 ## License
