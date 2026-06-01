@@ -14,7 +14,22 @@ You can run a new container from the computer where the UPS USB cable is plugged
 the serial interface created by this USB is named `/dev/ttyACM0` and replace it accordingly:
 
 ```
-$ docker run -d --name supervise --device /dev/ttyACM0:rw -p 4470:4470 ghcr.io/valtlfelipe/ragtech-supervise:latest
+$ docker run -d --name supervise --device /dev/ttyACM0:rw -p 4470:4470 -p 4471:4471 ghcr.io/valtlfelipe/ragtech-supervise:latest
+```
+
+## Docker Compose
+
+```yaml
+services:
+  ragtech-supervise:
+    image: ghcr.io/valtlfelipe/ragtech-supervise:latest
+    device:
+      - /dev/ttyACM0:/dev/ttyACM0:rw
+    ports:
+      - "4470:4470"  # Supervise web interface and API
+      - "4471:4471"  # Prometheus metrics exporter
+    volumes:
+      - ./data:/data
 ```
 
 ## Logging
@@ -95,7 +110,7 @@ This is how you would run the container with the database mounted to the host fi
 
 ```
 $ mkdir host-db-path
-$ docker run [...] -v ./host-db-path:/data ghcr.io/valtlfelipe/ragtech-supervise:latest
+$ docker run -d --name supervise --device /dev/ttyACM0:rw -p 4470:4470 -p 4471:4471 -v ./host-db-path:/data ghcr.io/valtlfelipe/ragtech-supervise:latest
 ```
 
 ## License
