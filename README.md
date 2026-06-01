@@ -1,10 +1,12 @@
-# Ragtech Supervise Docker Image
+# Ragtech Supervise Docker Image with Prometheus metrics
 
 Ragtech is a Brazilian company that produces UPS (more commonly known in Brazil as no-break)
 devices. They have a software called Supervise that is used to monitor and control the UPS devices.
 
 The existing Supervise software packaging is not really suitable with modern Linux distributions.
 This project aims to provide a Docker image with Supervise supplying all required dependencies.
+
+Also, a Prometheus metrics endpoint was added to easily export metrics data.
 
 ## Usage
 
