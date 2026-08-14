@@ -26,6 +26,9 @@ type UPSCollector struct {
 	ledRedDesc          *prometheus.Desc
 	ledGreenDesc        *prometheus.Desc
 	ledBlueDesc         *prometheus.Desc
+	onBatteryDesc       *prometheus.Desc
+	batteryLowDesc      *prometheus.Desc
+	inputMissingDesc    *prometheus.Desc
 	systemUptimeDesc    *prometheus.Desc
 	scrapeDurationDesc  *prometheus.Desc
 	scrapeErrorsDesc    *prometheus.Desc
@@ -56,7 +59,7 @@ func NewUPSCollector(client *api.Client) *UPSCollector {
 		[]string{"device_id", "device_name"}, nil,
 	)
 	c.outputPowerDesc = prometheus.NewDesc(
-		fmt.Sprintf("%s_ups_output_power_watts", ns), "UPS output power in watts",
+		fmt.Sprintf("%s_ups_output_power_watts", ns), "UPS output apparent power in watts (V×I)",
 		[]string{"device_id", "device_name"}, nil,
 	)
 	c.batteryChargeDesc = prometheus.NewDesc(
@@ -72,23 +75,35 @@ func NewUPSCollector(client *api.Client) *UPSCollector {
 		[]string{"device_id", "device_name"}, nil,
 	)
 	c.loadPercentDesc = prometheus.NewDesc(
-		fmt.Sprintf("%s_ups_load_percent", ns), "UPS load as percentage of nominal power",
+		fmt.Sprintf("%s_ups_load_percent", ns), "UPS load as percentage of nominal power (Supervise pOutput is already percent)",
 		[]string{"device_id", "device_name"}, nil,
 	)
 	c.ledRedDesc = prometheus.NewDesc(
-		fmt.Sprintf("%s_ups_led_red", ns), "UPS red LED state (0 or 255)",
+		fmt.Sprintf("%s_ups_led_red", ns), "UPS red LED PWM 0-255",
 		[]string{"device_id", "device_name"}, nil,
 	)
 	c.ledGreenDesc = prometheus.NewDesc(
-		fmt.Sprintf("%s_ups_led_green", ns), "UPS green LED state (0 or 255)",
+		fmt.Sprintf("%s_ups_led_green", ns), "UPS green LED PWM 0-255",
 		[]string{"device_id", "device_name"}, nil,
 	)
 	c.ledBlueDesc = prometheus.NewDesc(
-		fmt.Sprintf("%s_ups_led_blue", ns), "UPS blue LED state (0 or 255)",
+		fmt.Sprintf("%s_ups_led_blue", ns), "UPS blue LED PWM 0-255",
+		[]string{"device_id", "device_name"}, nil,
+	)
+	c.onBatteryDesc = prometheus.NewDesc(
+		fmt.Sprintf("%s_ups_on_battery", ns), "1 if the UPS is running on battery (status.opBattery)",
+		[]string{"device_id", "device_name"}, nil,
+	)
+	c.batteryLowDesc = prometheus.NewDesc(
+		fmt.Sprintf("%s_ups_battery_low", ns), "1 if the UPS reports low battery (status.loBattery)",
+		[]string{"device_id", "device_name"}, nil,
+	)
+	c.inputMissingDesc = prometheus.NewDesc(
+		fmt.Sprintf("%s_ups_input_missing", ns), "1 if mains input is missing (status.noVInput)",
 		[]string{"device_id", "device_name"}, nil,
 	)
 	c.systemUptimeDesc = prometheus.NewDesc(
-		fmt.Sprintf("%s_system_uptime_milliseconds", ns), "System uptime in milliseconds since epoch",
+		fmt.Sprintf("%s_system_uptime_milliseconds", ns), "Supervise process start time in milliseconds since Unix epoch",
 		nil, nil,
 	)
 	c.scrapeDurationDesc = prometheus.NewDesc(
@@ -117,6 +132,9 @@ func (c *UPSCollector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- c.ledRedDesc
 	ch <- c.ledGreenDesc
 	ch <- c.ledBlueDesc
+	ch <- c.onBatteryDesc
+	ch <- c.batteryLowDesc
+	ch <- c.inputMissingDesc
 	ch <- c.systemUptimeDesc
 	ch <- c.scrapeDurationDesc
 	ch <- c.scrapeErrorsDesc
@@ -158,19 +176,23 @@ func (c *UPSCollector) Collect(ch chan<- prometheus.Metric) {
 		ch <- prometheus.MustNewConstMetric(c.outputVoltageDesc, prometheus.GaugeValue, v.VOutput, labels...)
 		ch <- prometheus.MustNewConstMetric(c.outputCurrentDesc, prometheus.GaugeValue, v.IOutput, labels...)
 		ch <- prometheus.MustNewConstMetric(c.outputFrequencyDesc, prometheus.GaugeValue, v.FOutput, labels...)
-		ch <- prometheus.MustNewConstMetric(c.outputPowerDesc, prometheus.GaugeValue, v.POutput, labels...)
+		ch <- prometheus.MustNewConstMetric(c.outputPowerDesc, prometheus.GaugeValue, outputPowerWatts(v), labels...)
 		ch <- prometheus.MustNewConstMetric(c.batteryChargeDesc, prometheus.GaugeValue, v.CBattery, labels...)
 		ch <- prometheus.MustNewConstMetric(c.batteryVoltageDesc, prometheus.GaugeValue, v.VBattery, labels...)
 		ch <- prometheus.MustNewConstMetric(c.temperatureDesc, prometheus.GaugeValue, v.Temperature, labels...)
 
-		if v.NominalPOutput > 0 {
-			loadPercent := (v.POutput / v.NominalPOutput) * 100
-			ch <- prometheus.MustNewConstMetric(c.loadPercentDesc, prometheus.GaugeValue, loadPercent, labels...)
+		if pct, ok := loadPercent(v); ok {
+			ch <- prometheus.MustNewConstMetric(c.loadPercentDesc, prometheus.GaugeValue, pct, labels...)
 		}
 
 		ch <- prometheus.MustNewConstMetric(c.ledRedDesc, prometheus.GaugeValue, float64(v.LedRed), labels...)
 		ch <- prometheus.MustNewConstMetric(c.ledGreenDesc, prometheus.GaugeValue, float64(v.LedGreen), labels...)
 		ch <- prometheus.MustNewConstMetric(c.ledBlueDesc, prometheus.GaugeValue, float64(v.LedBlue), labels...)
+
+		st := deviceStatus.Status
+		ch <- prometheus.MustNewConstMetric(c.onBatteryDesc, prometheus.GaugeValue, float64(st.OpBattery), labels...)
+		ch <- prometheus.MustNewConstMetric(c.batteryLowDesc, prometheus.GaugeValue, float64(st.LoBattery), labels...)
+		ch <- prometheus.MustNewConstMetric(c.inputMissingDesc, prometheus.GaugeValue, float64(st.NoVInput), labels...)
 	}
 
 	duration := time.Since(start).Seconds()

@@ -42,15 +42,24 @@ type DeviceStatusResponse struct {
 }
 
 type DeviceStatus struct {
-	ID     string `json:"id"`
-	Name   string `json:"name"`
-	Model  int    `json:"model"`
-	Family int    `json:"family"`
-	Status struct {
-		Connected int `json:"connected"`
-		SyncInput int `json:"syncInput"`
-	} `json:"status"`
-	Vars DeviceVars `json:"vars"`
+	ID     string      `json:"id"`
+	Name   string      `json:"name"`
+	Model  int         `json:"model"`
+	Family int         `json:"family"`
+	Status DeviceFlags `json:"status"`
+	Vars   DeviceVars  `json:"vars"`
+}
+
+// DeviceFlags are 0/1 values from Supervise's status object.
+type DeviceFlags struct {
+	Connected int `json:"connected"`
+	SyncInput int `json:"syncInput"`
+	OpBattery int `json:"opBattery"`
+	OpStandBy int `json:"opStandBy"`
+	LoBattery int `json:"loBattery"`
+	NoVInput  int `json:"noVInput"`
+	LoVInput  int `json:"loVInput"`
+	HiVInput  int `json:"hiVInput"`
 }
 
 type DeviceVars struct {

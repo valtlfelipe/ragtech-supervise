@@ -64,7 +64,7 @@
         "type": "prometheus",
         "uid": "${DS_PROMETHEUS}"
       },
-      "description": "UPS connection status from ragtech_ups_status (1 = connected, 0 = disconnected).",
+      "description": "USB/API connection from ragtech_ups_status. This is not on-battery \u2014 see Power source.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -230,7 +230,7 @@
         "type": "prometheus",
         "uid": "${DS_PROMETHEUS}"
       },
-      "description": "Load as a percentage of nominal output power from ragtech_ups_load_percent.",
+      "description": "Load percent from ragtech_ups_load_percent (Supervise pOutput, with V\u00d7I fallback).",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -397,16 +397,8 @@
                 "value": null
               },
               {
-                "color": "orange",
-                "value": 100
-              },
-              {
                 "color": "green",
-                "value": 200
-              },
-              {
-                "color": "orange",
-                "value": 240
+                "value": 80
               },
               {
                 "color": "red",
@@ -478,16 +470,8 @@
                 "value": null
               },
               {
-                "color": "orange",
-                "value": 100
-              },
-              {
                 "color": "green",
-                "value": 200
-              },
-              {
-                "color": "orange",
-                "value": 240
+                "value": 80
               },
               {
                 "color": "red",
@@ -544,7 +528,7 @@
         "type": "prometheus",
         "uid": "${DS_PROMETHEUS}"
       },
-      "description": "Output power from ragtech_ups_output_power_watts.",
+      "description": "Apparent output power (vOutput \u00d7 iOutput), not Supervise pOutput.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -656,7 +640,280 @@
         "type": "prometheus",
         "uid": "${DS_PROMETHEUS}"
       },
-      "description": "Latest reading per UPS. Status is 1 when connected. LED columns are the raw 0/255 values.",
+      "description": "1 = running on battery (ragtech_ups_on_battery). 0 = mains.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [
+            {
+              "options": {
+                "0": {
+                  "color": "green",
+                  "index": 0,
+                  "text": "Mains"
+                }
+              },
+              "type": "value"
+            },
+            {
+              "options": {
+                "1": {
+                  "color": "orange",
+                  "index": 1,
+                  "text": "Battery"
+                }
+              },
+              "type": "value"
+            }
+          ],
+          "max": 1,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 0,
+        "y": 6
+      },
+      "id": 30,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": true
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "exemplar": false,
+          "expr": "max by (device_name) (ragtech_ups_on_battery{instance=~\"$instance\",device_name=~\"$device\"})",
+          "instant": true,
+          "legendFormat": "{{device_name}}",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "Power source",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "description": "1 = mains missing (ragtech_ups_input_missing).",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [
+            {
+              "options": {
+                "0": {
+                  "color": "green",
+                  "index": 0,
+                  "text": "Present"
+                }
+              },
+              "type": "value"
+            },
+            {
+              "options": {
+                "1": {
+                  "color": "red",
+                  "index": 1,
+                  "text": "Missing"
+                }
+              },
+              "type": "value"
+            }
+          ],
+          "max": 1,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 8,
+        "y": 6
+      },
+      "id": 31,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": true
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "exemplar": false,
+          "expr": "max by (device_name) (ragtech_ups_input_missing{instance=~\"$instance\",device_name=~\"$device\"})",
+          "instant": true,
+          "legendFormat": "{{device_name}}",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "Mains input",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "description": "1 = Supervise reports low battery (ragtech_ups_battery_low).",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [
+            {
+              "options": {
+                "0": {
+                  "color": "green",
+                  "index": 0,
+                  "text": "OK"
+                }
+              },
+              "type": "value"
+            },
+            {
+              "options": {
+                "1": {
+                  "color": "red",
+                  "index": 1,
+                  "text": "Low"
+                }
+              },
+              "type": "value"
+            }
+          ],
+          "max": 1,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 16,
+        "y": 6
+      },
+      "id": 32,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": true
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "exemplar": false,
+          "expr": "max by (device_name) (ragtech_ups_battery_low{instance=~\"$instance\",device_name=~\"$device\"})",
+          "instant": true,
+          "legendFormat": "{{device_name}}",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "Battery low",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "description": "Latest reading per UPS. Status is USB/API connected. On battery / mains missing / batt low come from Supervise status flags. Load is percent. Power is V\u00d7I watts. LED columns are 0\u2013255 PWM.",
       "fieldConfig": {
         "defaults": {
           "custom": {
@@ -703,6 +960,126 @@
                         "color": "green",
                         "index": 1,
                         "text": "Connected"
+                      }
+                    },
+                    "type": "value"
+                  }
+                ]
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "mode": "basic",
+                  "type": "color-background"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "On battery"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "options": {
+                      "0": {
+                        "color": "green",
+                        "index": 0,
+                        "text": "Mains"
+                      }
+                    },
+                    "type": "value"
+                  },
+                  {
+                    "options": {
+                      "1": {
+                        "color": "orange",
+                        "index": 1,
+                        "text": "Battery"
+                      }
+                    },
+                    "type": "value"
+                  }
+                ]
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "mode": "basic",
+                  "type": "color-background"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Mains missing"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "options": {
+                      "0": {
+                        "color": "green",
+                        "index": 0,
+                        "text": "OK"
+                      }
+                    },
+                    "type": "value"
+                  },
+                  {
+                    "options": {
+                      "1": {
+                        "color": "red",
+                        "index": 1,
+                        "text": "Missing"
+                      }
+                    },
+                    "type": "value"
+                  }
+                ]
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "mode": "basic",
+                  "type": "color-background"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Batt low"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "options": {
+                      "0": {
+                        "color": "green",
+                        "index": 0,
+                        "text": "OK"
+                      }
+                    },
+                    "type": "value"
+                  },
+                  {
+                    "options": {
+                      "1": {
+                        "color": "red",
+                        "index": 1,
+                        "text": "Low"
                       }
                     },
                     "type": "value"
@@ -895,7 +1272,7 @@
         "h": 6,
         "w": 24,
         "x": 0,
-        "y": 6
+        "y": 10
       },
       "id": 10,
       "options": {
@@ -924,6 +1301,42 @@
           "instant": true,
           "legendFormat": "status",
           "refId": "status"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "exemplar": false,
+          "expr": "ragtech_ups_on_battery{instance=~\"$instance\",device_name=~\"$device\"}",
+          "format": "table",
+          "instant": true,
+          "refId": "onbatt"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "exemplar": false,
+          "expr": "ragtech_ups_input_missing{instance=~\"$instance\",device_name=~\"$device\"}",
+          "format": "table",
+          "instant": true,
+          "refId": "nomains"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "exemplar": false,
+          "expr": "ragtech_ups_battery_low{instance=~\"$instance\",device_name=~\"$device\"}",
+          "format": "table",
+          "instant": true,
+          "refId": "batlow"
         },
         {
           "datasource": {
@@ -1095,18 +1508,21 @@
             "indexByName": {
               "device_name": 0,
               "Value #status": 1,
-              "Value #battery": 2,
-              "Value #load": 3,
-              "Value #temp": 4,
-              "Value #vin": 5,
-              "Value #vout": 6,
-              "Value #iout": 7,
-              "Value #pout": 8,
-              "Value #freq": 9,
-              "Value #vbat": 10,
-              "Value #ledr": 11,
-              "Value #ledg": 12,
-              "Value #ledb": 13
+              "Value #onbatt": 2,
+              "Value #nomains": 3,
+              "Value #batlow": 4,
+              "Value #battery": 5,
+              "Value #load": 6,
+              "Value #temp": 7,
+              "Value #vin": 8,
+              "Value #vout": 9,
+              "Value #iout": 10,
+              "Value #pout": 11,
+              "Value #freq": 12,
+              "Value #vbat": 13,
+              "Value #ledr": 14,
+              "Value #ledg": 15,
+              "Value #ledb": 16
             },
             "renameByName": {
               "device_name": "Device",
@@ -1122,7 +1538,10 @@
               "Value #vbat": "Vbat",
               "Value #ledr": "LED R",
               "Value #ledg": "LED G",
-              "Value #ledb": "LED B"
+              "Value #ledb": "LED B",
+              "Value #onbatt": "On battery",
+              "Value #nomains": "Mains missing",
+              "Value #batlow": "Batt low"
             }
           }
         }
@@ -1135,7 +1554,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 12
+        "y": 16
       },
       "id": 11,
       "title": "Electrical",
@@ -1192,7 +1611,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 13
+        "y": 17
       },
       "id": 12,
       "options": {
@@ -1244,7 +1663,7 @@
         "type": "prometheus",
         "uid": "${DS_PROMETHEUS}"
       },
-      "description": "Output power (watts) and current (amps). Current uses the right Y axis.",
+      "description": "Apparent output power (V\u00d7I watts) and current (amps). Current uses the right Y axis.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1307,7 +1726,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 13
+        "y": 17
       },
       "id": 13,
       "options": {
@@ -1405,7 +1824,7 @@
         "h": 8,
         "w": 8,
         "x": 0,
-        "y": 21
+        "y": 25
       },
       "id": 14,
       "options": {
@@ -1446,7 +1865,7 @@
         "type": "prometheus",
         "uid": "${DS_PROMETHEUS}"
       },
-      "description": "Load as a percentage of nominal output power. Only emitted when the UPS reports a nominal power greater than zero.",
+      "description": "Load percent. Supervise pOutput is already 0\u2013100; exporter also uses V\u00d7I / nominal when that is larger.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1511,7 +1930,7 @@
         "h": 8,
         "w": 8,
         "x": 8,
-        "y": 21
+        "y": 25
       },
       "id": 15,
       "options": {
@@ -1615,7 +2034,7 @@
         "h": 8,
         "w": 8,
         "x": 16,
-        "y": 21
+        "y": 25
       },
       "id": 16,
       "options": {
@@ -1657,7 +2076,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 29
+        "y": 33
       },
       "id": 17,
       "title": "Battery",
@@ -1733,7 +2152,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 30
+        "y": 34
       },
       "id": 18,
       "options": {
@@ -1820,7 +2239,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 30
+        "y": 34
       },
       "id": 19,
       "options": {
@@ -1862,7 +2281,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 38
+        "y": 42
       },
       "id": 20,
       "title": "Status and LEDs",
@@ -1873,7 +2292,7 @@
         "type": "prometheus",
         "uid": "${DS_PROMETHEUS}"
       },
-      "description": "Connection status over time. 1 = connected, 0 = disconnected.",
+      "description": "USB connected, on battery, mains missing, and low-battery flags over time.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1894,9 +2313,9 @@
             {
               "options": {
                 "0": {
-                  "color": "red",
+                  "color": "transparent",
                   "index": 0,
-                  "text": "Disconnected"
+                  "text": "Off"
                 }
               },
               "type": "value"
@@ -1904,9 +2323,8 @@
             {
               "options": {
                 "1": {
-                  "color": "green",
                   "index": 1,
-                  "text": "Connected"
+                  "text": "On"
                 }
               },
               "type": "value"
@@ -1926,13 +2344,59 @@
             ]
           }
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "/connected/"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "/on battery/"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "orange",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "/mains missing|battery low/"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 6,
         "w": 12,
         "x": 0,
-        "y": 39
+        "y": 43
       },
       "id": 21,
       "options": {
@@ -1959,12 +2423,45 @@
           },
           "editorMode": "code",
           "expr": "ragtech_ups_status{instance=~\"$instance\",device_name=~\"$device\"}",
-          "legendFormat": "{{device_name}}",
+          "legendFormat": "{{device_name}} connected",
           "range": true,
           "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "ragtech_ups_on_battery{instance=~\"$instance\",device_name=~\"$device\"}",
+          "legendFormat": "{{device_name}} on battery",
+          "range": true,
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "ragtech_ups_input_missing{instance=~\"$instance\",device_name=~\"$device\"}",
+          "legendFormat": "{{device_name}} mains missing",
+          "range": true,
+          "refId": "C"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "ragtech_ups_battery_low{instance=~\"$instance\",device_name=~\"$device\"}",
+          "legendFormat": "{{device_name}} battery low",
+          "range": true,
+          "refId": "D"
         }
       ],
-      "title": "Connection timeline",
+      "title": "Operating state",
       "type": "state-timeline"
     },
     {
@@ -1972,7 +2469,7 @@
         "type": "prometheus",
         "uid": "${DS_PROMETHEUS}"
       },
-      "description": "Front-panel LED state. The exporter reports 0 or 255; values are normalized to 0/1 here.",
+      "description": "Front-panel RGB PWM (0-255). Values are shown as on when > 0.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -2065,7 +2562,7 @@
         "h": 6,
         "w": 12,
         "x": 12,
-        "y": 39
+        "y": 43
       },
       "id": 22,
       "options": {
@@ -2091,7 +2588,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "ragtech_ups_led_red{instance=~\"$instance\",device_name=~\"$device\"} / 255",
+          "expr": "ragtech_ups_led_red{instance=~\"$instance\",device_name=~\"$device\"} > 0",
           "legendFormat": "{{device_name}} red",
           "range": true,
           "refId": "A"
@@ -2102,7 +2599,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "ragtech_ups_led_green{instance=~\"$instance\",device_name=~\"$device\"} / 255",
+          "expr": "ragtech_ups_led_green{instance=~\"$instance\",device_name=~\"$device\"} > 0",
           "legendFormat": "{{device_name}} green",
           "range": true,
           "refId": "B"
@@ -2113,7 +2610,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "ragtech_ups_led_blue{instance=~\"$instance\",device_name=~\"$device\"} / 255",
+          "expr": "ragtech_ups_led_blue{instance=~\"$instance\",device_name=~\"$device\"} > 0",
           "legendFormat": "{{device_name}} blue",
           "range": true,
           "refId": "C"
@@ -2128,7 +2625,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 45
+        "y": 49
       },
       "id": 23,
       "title": "Exporter",
@@ -2202,7 +2699,7 @@
         "h": 8,
         "w": 8,
         "x": 0,
-        "y": 46
+        "y": 50
       },
       "id": 24,
       "options": {
@@ -2290,7 +2787,7 @@
         "h": 8,
         "w": 8,
         "x": 8,
-        "y": 46
+        "y": 50
       },
       "id": 25,
       "options": {
@@ -2375,7 +2872,7 @@
         "h": 8,
         "w": 8,
         "x": 16,
-        "y": 46
+        "y": 50
       },
       "id": 26,
       "options": {
@@ -2472,7 +2969,7 @@
         "h": 8,
         "w": 8,
         "x": 0,
-        "y": 54
+        "y": 58
       },
       "id": 27,
       "options": {
@@ -2559,7 +3056,7 @@
         "h": 8,
         "w": 8,
         "x": 8,
-        "y": 54
+        "y": 58
       },
       "id": 28,
       "options": {
@@ -2625,7 +3122,7 @@
         "h": 8,
         "w": 8,
         "x": 16,
-        "y": 54
+        "y": 58
       },
       "id": 29,
       "options": {
@@ -2751,6 +3248,6 @@
   "timezone": "browser",
   "title": "Ragtech Supervise",
   "uid": "ragtech-supervise",
-  "version": 2,
+  "version": 4,
   "weekStart": ""
 }

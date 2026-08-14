@@ -60,20 +60,23 @@ A Prometheus-compatible metrics endpoint is available at `http://localhost:4471/
 
 | Metric | Type | Description |
 |--------|------|-------------|
-| `ragtech_ups_status` | Gauge | UPS connection status (1=connected, 0=disconnected) |
+| `ragtech_ups_status` | Gauge | USB/API connection (1=connected, 0=disconnected). This is not on-battery. |
+| `ragtech_ups_on_battery` | Gauge | 1 if running on battery (`status.opBattery`) |
+| `ragtech_ups_battery_low` | Gauge | 1 if Supervise reports low battery |
+| `ragtech_ups_input_missing` | Gauge | 1 if mains input is missing (`status.noVInput`) |
 | `ragtech_ups_input_voltage_volts` | Gauge | Input voltage in volts |
 | `ragtech_ups_output_voltage_volts` | Gauge | Output voltage in volts |
 | `ragtech_ups_output_current_amps` | Gauge | Output current in amps |
 | `ragtech_ups_output_frequency_hertz` | Gauge | Output frequency in Hz |
-| `ragtech_ups_output_power_watts` | Gauge | Output power in watts |
+| `ragtech_ups_output_power_watts` | Gauge | Output apparent power in watts (`vOutput × iOutput`) |
 | `ragtech_ups_battery_charge_percent` | Gauge | Battery charge percentage |
 | `ragtech_ups_battery_voltage_volts` | Gauge | Battery voltage in volts |
 | `ragtech_ups_temperature_celsius` | Gauge | UPS temperature in Celsius |
 | `ragtech_ups_load_percent` | Gauge | Load as percentage of nominal power |
-| `ragtech_ups_led_red` | Gauge | Red LED state (0 or 255) |
-| `ragtech_ups_led_green` | Gauge | Green LED state (0 or 255) |
-| `ragtech_ups_led_blue` | Gauge | Blue LED state (0 or 255) |
-| `ragtech_system_uptime_milliseconds` | Gauge | System uptime in milliseconds since epoch |
+| `ragtech_ups_led_red` | Gauge | Red LED PWM (0–255) |
+| `ragtech_ups_led_green` | Gauge | Green LED PWM (0–255) |
+| `ragtech_ups_led_blue` | Gauge | Blue LED PWM (0–255) |
+| `ragtech_system_uptime_milliseconds` | Gauge | Supervise process start time (Unix ms). Elapsed uptime is `time() - metric/1000`. |
 | `ragtech_collector_scrape_duration_seconds` | Gauge | Duration of the last scrape |
 | `ragtech_collector_scrape_errors_total` | Counter | Total number of scrape errors |
 | `ragtech_process_cpu_seconds_total` | Counter | Exporter process CPU time |
@@ -85,7 +88,7 @@ A Prometheus-compatible metrics endpoint is available at `http://localhost:4471/
 
 All UPS metrics include `device_id` and `device_name` labels. Collector scrape metrics include a `collector` label (`ups`). Scrape errors also include `error_type` (`system_status`, `list_devices`, or `device_status`).
 
-`ragtech_ups_load_percent` is only emitted when the UPS reports a nominal output power greater than zero.
+`ragtech_ups_load_percent` is Supervise's `pOutput`, which is already a 0–100 load percentage (the web UI labels it "Potência (%)"). When voltage and current are present, the exporter also computes apparent-power load (`vOutput × iOutput / nominalPOutput`) and keeps the larger value, because the firmware integer often floors to 0 below about 1% load.
 
 `ragtech_collector_scrape_errors_total` is typed as a counter, but the collector emits `1` only while that step is failing and omits the series on success. Treat it as a current-error flag (do not `rate()` it).
 
@@ -144,10 +147,10 @@ Default time range is the last 6 hours. Auto-refresh is 15s.
 
 | Row | What it shows |
 |-----|----------------|
-| Overview | Connection, battery, load, temperature, input/output voltage, power, and current, plus a per-device table of the latest readings |
+| Overview | USB connection, battery, load, temperature, voltages, power, current; power source / mains missing / battery-low flags; per-device table |
 | Electrical | Voltage, output power/current, frequency, load, and temperature over time |
 | Battery | Charge percentage and battery voltage |
-| Status and LEDs | Connection timeline and red/green/blue LED timeline (LED values are normalized from 0/255 to 0/1) |
+| Status and LEDs | Operating-state timeline (connected, on battery, mains missing, battery low) and RGB LED timeline |
 | Exporter | Scrape duration, scrape-error flags, process memory/CPU/FDs, and Supervise vs exporter uptime |
 
 Supervise uptime is derived from `ragtech_system_uptime_milliseconds` (milliseconds since epoch):
