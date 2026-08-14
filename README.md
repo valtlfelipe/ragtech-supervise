@@ -76,8 +76,18 @@ A Prometheus-compatible metrics endpoint is available at `http://localhost:4471/
 | `ragtech_system_uptime_milliseconds` | Gauge | System uptime in milliseconds since epoch |
 | `ragtech_collector_scrape_duration_seconds` | Gauge | Duration of the last scrape |
 | `ragtech_collector_scrape_errors_total` | Counter | Total number of scrape errors |
+| `ragtech_process_cpu_seconds_total` | Counter | Exporter process CPU time |
+| `ragtech_process_open_fds` | Gauge | Exporter open file descriptors |
+| `ragtech_process_max_fds` | Gauge | Exporter max file descriptors |
+| `ragtech_process_resident_memory_bytes` | Gauge | Exporter resident memory (RSS) |
+| `ragtech_process_virtual_memory_bytes` | Gauge | Exporter virtual memory |
+| `ragtech_process_start_time_seconds` | Gauge | Exporter process start time (unix seconds) |
 
-All UPS metrics include `device_id` and `device_name` labels.
+All UPS metrics include `device_id` and `device_name` labels. Collector scrape metrics include a `collector` label (`ups`). Scrape errors also include `error_type` (`system_status`, `list_devices`, or `device_status`).
+
+`ragtech_ups_load_percent` is only emitted when the UPS reports a nominal output power greater than zero.
+
+`ragtech_collector_scrape_errors_total` is typed as a counter, but the collector emits `1` only while that step is failing and omits the series on success. Treat it as a current-error flag (do not `rate()` it).
 
 **Health check:**
 
@@ -94,6 +104,59 @@ scrape_configs:
     static_configs:
       - targets: ['localhost:4471']
 ```
+
+### Grafana dashboard
+
+A Grafana dashboard for the `ragtech_*` metrics lives at [`grafana/ragtech-supervise.json`](grafana/ragtech-supervise.json). It targets Grafana 10+ with a Prometheus data source.
+
+**Import via the UI**
+
+1. In Grafana, open **Dashboards → New → Import**.
+2. Upload `grafana/ragtech-supervise.json`, or paste its contents.
+3. Select the Prometheus data source that scrapes this exporter.
+
+**Provision from disk**
+
+Point a Grafana file provider at the `grafana` directory (or copy the JSON into an existing dashboards folder):
+
+```yaml
+apiVersion: 1
+providers:
+  - name: ragtech
+    type: file
+    options:
+      path: /var/lib/grafana/dashboards
+```
+
+The dashboard UID is `ragtech-supervise`. Re-importing or re-provisioning updates the same dashboard in place.
+
+**Variables**
+
+| Variable | What it filters |
+|----------|-----------------|
+| Data source | Prometheus data source |
+| Instance | Exporter `instance` label (multi-select, includes All) |
+| Device | UPS `device_name` (multi-select, includes All, scoped to the selected instance) |
+
+Default time range is the last 6 hours. Auto-refresh is 15s.
+
+**Panels**
+
+| Row | What it shows |
+|-----|----------------|
+| Overview | Connection, battery, load, temperature, input/output voltage, power, and current, plus a per-device table of the latest readings |
+| Electrical | Voltage, output power/current, frequency, load, and temperature over time |
+| Battery | Charge percentage and battery voltage |
+| Status and LEDs | Connection timeline and red/green/blue LED timeline (LED values are normalized from 0/255 to 0/1) |
+| Exporter | Scrape duration, scrape-error flags, process memory/CPU/FDs, and Supervise vs exporter uptime |
+
+Supervise uptime is derived from `ragtech_system_uptime_milliseconds` (milliseconds since epoch):
+
+```
+time() - ragtech_system_uptime_milliseconds / 1000
+```
+
+Exporter uptime uses `ragtech_process_start_time_seconds`.
 
 ### SQLite Database
 
