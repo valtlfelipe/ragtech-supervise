@@ -1,5 +1,5 @@
 # Stage 1: Build Go exporter
-FROM docker.io/golang:1.23-alpine AS exporter-build
+FROM docker.io/golang:1.26-alpine AS exporter-build
 
 WORKDIR /build
 
